@@ -103,8 +103,7 @@ foreach ($group in $groupedAppointments) {
     # Loop through appointments within the current day group
     foreach ($appointment in $group.Group) {
         Write-Output ("- $($appointment.item.Subject) from $($appointment.item.Start.ToString("hh:mm tt")) to $($appointment.item.End.ToString("hh:mm tt")) (duration: $(($appointment.item.End - $appointment.item.Start).TotalMinutes))")
-    }
-    
+    }    
     Write-Output ""
 }
 
@@ -117,31 +116,41 @@ function CreateNewAppointment {
         [string[]]$attendees = @() # Default value is an empty array
     )
 
-    $outlook = New-Object -ComObject Outlook.Application
-    $newAppointment = $outlook.CreateItem(1) # 1 is olAppointmentItem
-
-    $newAppointment.Subject = $subject
-    $newAppointment.Start = $startTime
-    $newAppointment.End = $endTime
-    $newAppointment.ReminderSet = $false
-
-    Write-Host $startTime
-    Write-Host $endTime
-
-    # Adding attendees to the appointment
-    if ($attendees.Count -ge 1) {
-        foreach ($attendee in $attendees) {
-            $recipient = $newAppointment.Recipients.Add($attendee)
-            $recipient.Type = 1 # 1 for RequiredAttendee, 2 for OptionalAttendee
-            $recipient.Resolve()
-            if (-not $recipient.Resolved) {
-                Write-Host "Failed to resolve attendee: $attendee"
-                $recipient.Delete()
-            }
+    try {
+        Write-Debug "Creating Outlook Application object"
+        $outlook = New-Object -ComObject Outlook.Application
+        if ($null -eq $outlook) {
+            throw "Failed to create Outlook Application object."
         }
-    }
 
-    $newAppointment.Save()
+        Write-Debug "Creating new appointment item"
+        $newAppointment = $outlook.CreateItem(1) # 1 is olAppointmentItem
+        if ($null -eq $newAppointment) {
+            throw "Failed to create new appointment item."
+        }
+
+        $newAppointment.Subject = $subject
+        $newAppointment.Start = $startTime
+        $newAppointment.End = $endTime
+        $newAppointment.ReminderSet = $false
+
+        Write-Debug "Appointment created with subject: $subject, start time: $startTime, end time: $endTime"
+
+        # Set the meeting status to olMeeting
+        $newAppointment.MeetingStatus = 1
+
+        # Adding required attendees to the appointment
+        if ($attendees.Count -ge 1) {
+            $requiredAttendees = $attendees -join ";"
+            $newAppointment.RequiredAttendees = $requiredAttendees
+            Write-Debug "Added required attendees: $requiredAttendees"
+        }
+
+        $newAppointment.Save()
+        Write-Debug "Appointment saved successfully."
+    } catch {
+        Write-Host "An error occurred: $_"
+    }
 }
 
 # Function to check if there's a free slot for the new appointment

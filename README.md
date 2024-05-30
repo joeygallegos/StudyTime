@@ -14,3 +14,6 @@ You can specify if you want to setup a 60 minute or 30 minute meeting. The scrip
 
 ### Other Considerations
 I had a very hard time figuring out recurring meetings. This guy summed up how to visualize the recurring meetings and normal one-off meetings with this solutions: https://stackoverflow.com/a/12603773
+
+- There was some issues with adding recipients, but this thread explains it well
+https://stackoverflow.com/questions/39839181/outlook-macro-to-get-recipients-of-an-appointment
